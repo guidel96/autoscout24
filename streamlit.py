@@ -125,13 +125,10 @@ df = df.astype({
     'Fuel_emissions': 'string', 
     'First_registration': 'string', 
     'First_registration2': 'string',
-    'specific_model': 'int8', 
+    'specific_model': 'category', 
     'Power_CH': 'int64'
 }, errors='ignore')
 
-
-# rounding the specific model to the first decimal
-df['specific_model'] = round(df['specific_model'], 1)
 
 #######################################################################################################################
 ############# STREAMLIT INTEGRATION ###################################################################################
@@ -194,4 +191,59 @@ styled_data = data.style.format({
 st.dataframe(styled_data, width = 1500, height=1000)
 
 
+#######################################################################################################################
+############# STREAMLIT VISUALS ###################################################################################
+#######################################################################################################################
+
+import plotly.express as px
+import math
+
+st.markdown('# Visualization')
+
+fig_scatter_matrix = px.scatter_matrix(
+    df,
+    dimensions=['Price','Mileage','Power','specific_model'],
+    width=1200, height=600
+    )
+#fig.show()
+st.plotly_chart(fig_scatter_matrix, use_container_width=False, sharing='streamlit')
+
+################################################################################################
+# distribution of Mileage
+bin_width = 20000 #km # cannot decide on a bin size, but can decide on the number of bins (and we can compute how many bins we need for a specific bin size)
+nbins = math.ceil((df["Mileage"].max() - df["Mileage"].min()) / bin_width)
+mileage_distr = px.histogram(df, x='Mileage', nbins=nbins, title='Histogram of Distance (per 20 km)')
+st.plotly_chart(mileage_distr, sharing='streamlit')
+
+# distribution of price
+bin_width = 499 #km # cannot decide on a bin size, but can decide on the number of bins (and we can compute how many bins we need for a specific bin size)
+nbins = math.ceil((df["Price"].max() - df["Price"].min()) / bin_width)
+price_distr = px.histogram(df, x='Price', nbins=nbins, title='Distribution of Price')
+st.plotly_chart(price_distr, sharing='streamlit')
+
+# hist plot Power
+power_hist = px.histogram(df, x='Power', title='Histogram of Power',category_orders=dict(Power=["51 kW (69 CH)","55 kW (75 CH)","66 kW (90 CH)"]))
+st.plotly_chart(power_hist, sharing='streamlit')
+
+# hist plot specific_model
+specific_model_hist = px.histogram(df, x='specific_model', title='Histogram of Model') #,category_orders=dict(specific_model=["1.2","1.4","1"]))
+st.plotly_chart(specific_model_hist, sharing='streamlit')
+
+##################################################################################################
+# more advanced plots
+
+# Price hist with specific model as marker/color
+bin_width = 499 #km # cannot decide on a bin size, but can decide on the number of bins (and we can compute how many bins we need for a specific bin size)
+nbins = math.ceil((df["Price"].max() - df["Price"].min()) / bin_width)
+price_distr = px.histogram(df, x='Price', nbins=nbins, color="specific_model", title='Price per specific model')
+st.plotly_chart(price_distr, sharing='streamlit')
+
+# Scatterplot Mileage vs Price (with specific model as marker)
+scatter_price_mileage = px.scatter(df, 
+    x='Mileage', y='Price', 
+    title='Scatterplot Mileage vs Price', 
+    trendline='ols',                    #regression line but requires statsmodels to be installed
+    color='specific_model',
+    height = 600, width=800) 
+st.plotly_chart(scatter_price_mileage, sharing='streamlit')
 
